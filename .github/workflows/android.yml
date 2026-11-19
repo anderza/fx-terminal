@@ -31,6 +31,10 @@ jobs:
         run: npx @capacitor/assets generate --android --iconBackgroundColor '#07101f' --iconBackgroundColorDark '#07101f'
       - name: Sync Capacitor
         run: npx cap sync android
+      - name: Set Android update version
+        run: |
+          sed -i "s/versionCode [0-9][0-9]*/versionCode ${{ github.run_number }}/" android/app/build.gradle
+          sed -i 's/versionName "[^"]*"/versionName "1.0.${{ github.run_number }}"/' android/app/build.gradle
       - name: Build debug APK
         run: |
           chmod +x android/gradlew
@@ -51,4 +55,4 @@ jobs:
           gh release create "$TAG" \
             android/app/build/outputs/apk/debug/app-debug.apk \
             --title "FX Terminal APK $TAG" \
-            --notes "Автоматическая сборка Android APK из commit ${{ github.sha }}."
+            --notes "Автоматическая сборка Android APK из commit ${{ github.sha }}. Version code: ${{ github.run_number }}."
