@@ -1,0 +1,12 @@
+{
+  "appId": "dev.anderza.fxterminal",
+  "appName": "FX Terminal",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#0a0d0cff"
+  }
+}
