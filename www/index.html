@@ -4,16 +4,30 @@
 <meta name="theme-color" content="#0a0d0c">
 <title>FX TERMINAL</title>
 <style>
-:root{--bg:#0a0d0c;--pan:#0f1412;--grid:#1e2723;--fg:#cbd8d2;--dim:#6b7c75;--up:#3ddc84;--dn:#ff6b5e;--acc:#7cf0b5}
+:root,body[data-skin=terminal]{--bg:#0a0d0c;--pan:#0f1412;--grid:#1e2723;--fg:#cbd8d2;--dim:#6b7c75;--up:#3ddc84;--dn:#ff6b5e;--acc:#7cf0b5;--rad:0px;--bw:1px;--sh:none;--onsh:inset 0 0 0 1px rgba(124,240,181,.25);--fnt:ui-monospace,Menlo,Consolas,"DejaVu Sans Mono",monospace;--num:inherit;--bgimg:none}
+body[data-skin=fintech]{--bg:#0B0E14;--pan:#131926;--grid:#222b3b;--fg:#e8eef8;--dim:#7d8899;--up:#1FD6A0;--dn:#ff5f6d;--acc:#1FD6A0;--rad:10px;--bw:1px;--sh:0 1px 2px rgba(0,0,0,.45);--onsh:0 1px 2px rgba(0,0,0,.45);--fnt:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;--num:ui-monospace,Menlo,Consolas,monospace;--bgimg:none}
+body[data-skin=light]{--bg:#F7F8FA;--pan:#fff;--grid:#e4e8ef;--fg:#111827;--dim:#6b7280;--up:#0f9d58;--dn:#d93025;--acc:#2563EB;--rad:16px;--bw:1px;--sh:0 1px 3px rgba(16,24,40,.09);--onsh:0 0 0 2px rgba(37,99,235,.18);--fnt:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;--num:ui-monospace,Menlo,Consolas,monospace;--bgimg:none}
+body[data-skin=glass]{--bg:#141c42;--pan:rgba(255,255,255,.09);--grid:rgba(255,255,255,.24);--fg:#f3f6ff;--dim:#bcc5e4;--up:#7df0c0;--dn:#ff9aa2;--acc:#fff;--rad:14px;--bw:1px;--sh:0 4px 18px rgba(0,0,0,.25);--onsh:0 0 0 1px rgba(255,255,255,.4);--fnt:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;--num:ui-monospace,Menlo,Consolas,monospace;--bgimg:linear-gradient(160deg,#141c42,#3b1c5f 55%,#17264f)}
+body[data-skin=glass] .pan,body[data-skin=glass] .sq,body[data-skin=glass] .chip{backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+body[data-skin=glass] thead th{background:rgba(22,26,60,.85)}
+body[data-skin=brutal]{--bg:#FFF8E7;--pan:#fff;--grid:#111;--fg:#111;--dim:#4b4b4b;--up:#0a7d4b;--dn:#d6253a;--acc:#111;--rad:0px;--bw:3px;--sh:5px 5px 0 #111;--onsh:5px 5px 0 #111;--fnt:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;--num:inherit;--bgimg:none}
+body[data-skin=brutal] h1,body[data-skin=brutal] .inp .cur{color:#111}
+body[data-skin=brutal] .sq.on{background:#ffe14d}
+body[data-skin=brutal] .val,body[data-skin=brutal] .amt{font-weight:800}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--fg);font:13px/1.3 ui-monospace,Menlo,Consolas,"DejaVu Sans Mono",monospace;-webkit-text-size-adjust:100%;overflow:hidden}
-#app{height:100dvh;max-width:540px;margin:0 auto;padding:calc(8px + env(safe-area-inset-top)) 8px calc(8px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
-.pan{background:var(--pan);border:1px solid var(--grid)}
+body{background:var(--bg) var(--bgimg) fixed;color:var(--fg);font:13px/1.3 var(--fnt);-webkit-text-size-adjust:100%;overflow:hidden}
+#app{height:100dvh;max-width:540px;margin:0 auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+.pan{background:var(--pan);border:var(--bw) solid var(--grid);border-radius:var(--rad);box-shadow:var(--sh)}
+.skins{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.skins::-webkit-scrollbar{display:none}
+.chip{flex:none;background:var(--pan);border:var(--bw) solid var(--grid);border-radius:var(--rad);color:var(--dim);font:inherit;font-size:9px;letter-spacing:.12em;padding:5px 10px;cursor:pointer;white-space:nowrap}
+.chip.on{color:var(--acc);border-color:var(--acc)}
+.val,.amt,.rate{font-family:var(--num)}
 header{display:flex;align-items:center;gap:8px;padding:6px 8px}
 header h1{font-size:12px;letter-spacing:.18em;font-weight:600;color:var(--acc);margin:0}
 #status{margin-left:auto;font-size:10px;color:var(--dim);letter-spacing:.06em;text-align:right}
-#reload{width:28px;height:28px;flex:none;background:transparent;border:1px solid var(--grid);color:var(--fg);font:inherit;cursor:pointer}
+#reload{width:28px;height:28px;flex:none;background:transparent;border:var(--bw) solid var(--grid);border-radius:var(--rad);color:var(--fg);font:inherit;cursor:pointer}
 #reload:active{background:var(--grid)}
 .inp{padding:8px;display:flex;align-items:baseline;gap:8px}
 .inp .lbl{font-size:10px;color:var(--dim);letter-spacing:.14em}
@@ -31,9 +45,9 @@ tbody tr:last-child td{border-bottom:0}
 .up{color:var(--up)}.dn{color:var(--dn)}
 .pick{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.sq{aspect-ratio:1/1;min-height:0;background:var(--pan);border:1px solid var(--grid);color:var(--fg);font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0;cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.sq{aspect-ratio:1/1;min-height:0;background:var(--pan);border:var(--bw) solid var(--grid);border-radius:var(--rad);box-shadow:var(--sh);color:var(--fg);font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0;cursor:pointer;-webkit-user-select:none;user-select:none}
 .sq:active{background:var(--grid)}
-.sq.on{border-color:var(--acc);color:var(--acc);box-shadow:inset 0 0 0 1px rgba(124,240,181,.25)}
+.sq.on{border-color:var(--acc);color:var(--acc);box-shadow:var(--onsh)}
 .sq .ic{font-size:15px;line-height:1}
 .sq .lb{font-size:9px;letter-spacing:.1em;color:var(--dim)}
 .sq.on .lb{color:var(--acc)}
@@ -43,6 +57,7 @@ footer{font-size:9px;color:var(--dim);letter-spacing:.08em;text-align:center}
 </style></head><body>
 <div id=app>
   <header class=pan><h1>FX&middot;TERMINAL</h1><span id=status>INIT</span><button id=reload title="обновить курсы">&#8635;</button></header>
+  <div class=skins id=skins></div>
   <div class="inp pan"><span class=lbl>FROM</span><span class=cur id=fromCode>BYN</span><span class=val id=val>0</span></div>
   <div class="tbl pan"><table><thead><tr><th>CODE</th><th>RATE</th><th>&Delta;</th><th>AMOUNT</th></tr></thead><tbody id=rows></tbody></table></div>
   <div class=pick id=pick></div>
@@ -99,7 +114,7 @@ function press(k){
 function setStatus(t){$('#status').textContent=t}
 var SRCS=[
   {n:'open.er-api.com',u:'https://open.er-api.com/v6/latest/BYN',p:function(j){return j.rates}},
-  {n:'currency-api',u:'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/byn.json',p:function(j){var o={},k;for(k in j.byn)o[k.toUpperCase()]=j.byn[k];return o}}
+  {n:'currency-api (jsdelivr)',u:'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/byn.json',p:function(j){var o={},k;for(k in j.byn)o[k.toUpperCase()]=j.byn[k];return o}}
 ];
 async function load(){
   setStatus('LOADING\u2026');
@@ -145,5 +160,21 @@ document.addEventListener('keydown',function(e){
   else if(e.key==='Backspace')press('\u232B');
   else if(e.key==='Escape')press('C');
 });
-buildPick();buildKeys();render();load();
+var SKINS=[['terminal','TERMINAL'],['fintech','FINTECH DARK'],['light','LIGHT'],['glass','GLASS'],['brutal','BRUTAL']];
+var skin=ls('fx.skin')||'terminal';
+if(!SKINS.some(function(s){return s[0]===skin}))skin='terminal';
+function buildSkins(){
+  $('#skins').innerHTML=SKINS.map(function(s){
+    return '<button class="chip'+(s[0]===skin?' on':'')+'" data-s="'+s[0]+'">'+s[1]+'</button>';
+  }).join('');
+}
+function applySkin(s){
+  skin=s;document.body.dataset.skin=s;ls('fx.skin',s);buildSkins();
+  var m=document.querySelector('meta[name=theme-color]');
+  if(m)m.setAttribute('content',getComputedStyle(document.body).backgroundColor);
+}
+$('#skins').addEventListener('click',function(e){
+  var b=e.target.closest('.chip');if(b)applySkin(b.dataset.s);
+});
+applySkin(skin);buildPick();buildKeys();render();load();
 </script></body></html>
