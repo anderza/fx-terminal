@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0d0c">
+<title>FX TERMINAL</title>
+<style>
+:root{--bg:#0a0d0c;--pan:#0f1412;--grid:#1e2723;--fg:#cbd8d2;--dim:#6b7c75;--up:#3ddc84;--dn:#ff6b5e;--acc:#7cf0b5}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:13px/1.3 ui-monospace,Menlo,Consolas,"DejaVu Sans Mono",monospace;-webkit-text-size-adjust:100%;overflow:hidden}
+#app{height:100dvh;max-width:540px;margin:0 auto;padding:calc(8px + env(safe-area-inset-top)) 8px calc(8px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
+.pan{background:var(--pan);border:1px solid var(--grid)}
+header{display:flex;align-items:center;gap:8px;padding:6px 8px}
+header h1{font-size:12px;letter-spacing:.18em;font-weight:600;color:var(--acc);margin:0}
+#status{margin-left:auto;font-size:10px;color:var(--dim);letter-spacing:.06em;text-align:right}
+#reload{width:28px;height:28px;flex:none;background:transparent;border:1px solid var(--grid);color:var(--fg);font:inherit;cursor:pointer}
+#reload:active{background:var(--grid)}
+.inp{padding:8px;display:flex;align-items:baseline;gap:8px}
+.inp .lbl{font-size:10px;color:var(--dim);letter-spacing:.14em}
+.inp .cur{color:var(--acc);font-size:14px}
+.inp .val{margin-left:auto;font-size:26px;font-variant-numeric:tabular-nums}
+.tbl{flex:1;min-height:0;overflow:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+thead th{position:sticky;top:0;background:var(--pan);font-size:9px;letter-spacing:.12em;color:var(--dim);font-weight:400;text-align:right;padding:5px 8px;border-bottom:1px solid var(--grid)}
+thead th:first-child{text-align:left}
+tbody td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--grid)}
+tbody td:first-child{text-align:left;color:var(--fg)}
+tbody tr:last-child td{border-bottom:0}
+.amt{font-size:15px}
+.rate,.nm{color:var(--dim);font-size:11px}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.pick{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.sq{aspect-ratio:1/1;min-height:0;background:var(--pan);border:1px solid var(--grid);color:var(--fg);font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0;cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.sq:active{background:var(--grid)}
+.sq.on{border-color:var(--acc);color:var(--acc);box-shadow:inset 0 0 0 1px rgba(124,240,181,.25)}
+.sq .ic{font-size:15px;line-height:1}
+.sq .lb{font-size:9px;letter-spacing:.1em;color:var(--dim)}
+.sq.on .lb{color:var(--acc)}
+.keys .sq{font-size:17px}
+footer{font-size:9px;color:var(--dim);letter-spacing:.08em;text-align:center}
+@media(max-height:640px){.inp .val{font-size:21px}.sq .ic{font-size:13px}.keys .sq{font-size:15px}}
+</style></head><body>
+<div id=app>
+  <header class=pan><h1>FX&middot;TERMINAL</h1><span id=status>INIT</span><button id=reload title="обновить курсы">&#8635;</button></header>
+  <div class="inp pan"><span class=lbl>FROM</span><span class=cur id=fromCode>BYN</span><span class=val id=val>0</span></div>
+  <div class="tbl pan"><table><thead><tr><th>CODE</th><th>RATE</th><th>&Delta;</th><th>AMOUNT</th></tr></thead><tbody id=rows></tbody></table></div>
+  <div class=pick id=pick></div>
+  <div class=keys id=keys></div>
+  <footer id=src>SOURCE: &mdash;</footer>
+</div>
+<script>
+var CUR={BYN:{s:'Br',n:'БЕЛАРУСЬ'},RUB:{s:'\u20BD',n:'РОССИЯ'},EUR:{s:'\u20AC',n:'ЕВРОЗОНА'},USD:{s:'$',n:'США'},PLN:{s:'z\u0142',n:'ПОЛЬША'}};
+var CODES=Object.keys(CUR);
+var FB={BYN:1,RUB:26.5,EUR:0.29,USD:0.31,PLN:1.25};
+var rates=Object.assign({},FB),prev=null,from='BYN',buf='0';
+var $=function(s){return document.querySelector(s)};
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+function fmt(n){if(!isFinite(n))return '\u2014';var a=Math.abs(n),d=a>=1?2:4;return n.toLocaleString('ru-RU',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function amount(){return parseFloat(buf)||0}
+function rateOf(c){return rates[c]/rates[from]}
+function conv(c){return amount()*rateOf(c)}
+function delta(c){
+  if(!prev||!prev[c]||!prev[from])return{t:'\u2014',c:'rate'};
+  var p=((rates[c]/rates[from])/(prev[c]/prev[from])-1)*100;
+  if(Math.abs(p)<0.005)return{t:'0.00%',c:'rate'};
+  return{t:(p>0?'\u25B2':'\u25BC')+Math.abs(p).toFixed(2)+'%',c:p>0?'up':'dn'};
+}
+function buildPick(){
+  $('#pick').innerHTML=CODES.map(function(c){
+    return '<button class="sq'+(c===from?' on':'')+'" data-c="'+c+'"><span class=ic>'+CUR[c].s+'</span><span class=lb>'+c+'</span></button>';
+  }).join('');
+}
+var KEYS=[['7'],['8'],['9'],['\u232B'],['4'],['5'],['6'],['C'],['1'],['2'],['3'],['00'],['0',2],['.'],['\u21BB']];
+function buildKeys(){
+  $('#keys').innerHTML=KEYS.map(function(k){
+    var st=k[1]?' style="grid-column:span '+k[1]+';aspect-ratio:auto"':'';
+    return '<button class=sq data-k="'+k[0]+'"'+st+'>'+k[0]+'</button>';
+  }).join('');
+}
+function render(){
+  $('#fromCode').textContent=from;
+  $('#val').textContent=buf;
+  $('#rows').innerHTML=CODES.filter(function(c){return c!==from}).map(function(c){
+    var d=delta(c);
+    return '<tr><td>'+c+' <span class=nm>'+CUR[c].n+'</span></td><td class=rate>'+fmt(rateOf(c))+'</td><td class='+d.c+'>'+d.t+'</td><td class=amt>'+fmt(conv(c))+'</td></tr>';
+  }).join('');
+}
+function press(k){
+  if(k==='C')buf='0';
+  else if(k==='\u232B')buf=buf.slice(0,-1)||'0';
+  else if(k==='\u21BB'){load();return}
+  else if(k==='.'){if(buf.indexOf('.')<0)buf+='.'}
+  else if(k==='00'){if(buf!=='0')buf+='00'}
+  else buf=(buf==='0'?k:buf+k);
+  if(buf.replace('.','').length>12)buf=buf.slice(0,13);
+  render();
+}
+function setStatus(t){$('#status').textContent=t}
+var SRCS=[
+  {n:'open.er-api.com',u:'https://open.er-api.com/v6/latest/BYN',p:function(j){return j.rates}},
+  {n:'currency-api',u:'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/byn.json',p:function(j){var o={},k;for(k in j.byn)o[k.toUpperCase()]=j.byn[k];return o}}
+];
+async function load(){
+  setStatus('LOADING\u2026');
+  for(var i=0;i<SRCS.length;i++){
+    var s=SRCS[i];
+    try{
+      var ctl=new AbortController(),t=setTimeout(function(){ctl.abort()},7000);
+      var r=await fetch(s.u,{signal:ctl.signal});clearTimeout(t);
+      if(!r.ok)throw 0;
+      var m=s.p(await r.json()),nr={},c;
+      for(var j=0;j<CODES.length;j++){c=CODES[j];if(!m[c])throw 0;nr[c]=+m[c]}
+      var old=JSON.parse(ls('fx.prev')||'null');
+      if(old&&old.r)prev=old.r;
+      ls('fx.prev',JSON.stringify({r:nr,t:Date.now()}));
+      rates=nr;
+      setStatus('LIVE '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}));
+      $('#src').textContent='SOURCE: '+s.n+' \u00B7 \u0394 К ПРЕДЫДУЩЕЙ ЗАГРУЗКЕ';
+      render();return;
+    }catch(e){}
+  }
+  var cached=JSON.parse(ls('fx.prev')||'null');
+  if(cached&&cached.r){
+    rates=cached.r;
+    setStatus('OFFLINE \u00B7 КЭШ');
+    $('#src').textContent='SOURCE: КЭШ ОТ '+new Date(cached.t).toLocaleString('ru-RU');
+  }else{
+    rates=Object.assign({},FB);
+    setStatus('OFFLINE \u00B7 FALLBACK');
+    $('#src').textContent='SOURCE: ВСТРОЕННЫЕ КУРСЫ (БЕЗ СЕТИ)';
+  }
+  render();
+}
+$('#pick').addEventListener('click',function(e){
+  var b=e.target.closest('.sq');if(!b)return;from=b.dataset.c;buildPick();render();
+});
+$('#keys').addEventListener('click',function(e){
+  var b=e.target.closest('.sq');if(b)press(b.dataset.k);
+});
+$('#reload').addEventListener('click',load);
+document.addEventListener('keydown',function(e){
+  if(/^[0-9]$/.test(e.key))press(e.key);
+  else if(e.key==='.'||e.key===',')press('.');
+  else if(e.key==='Backspace')press('\u232B');
+  else if(e.key==='Escape')press('C');
+});
+buildPick();buildKeys();render();load();
+</scr"+"ipt></body></html>
