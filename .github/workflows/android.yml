@@ -27,6 +27,8 @@ jobs:
         run: npm install
       - name: Generate Android project
         run: npx cap add android
+      - name: Generate FX Terminal app icon
+        run: npx @capacitor/assets generate --android --iconBackgroundColor '#07101f' --iconBackgroundColorDark '#07101f'
       - name: Sync Capacitor
         run: npx cap sync android
       - name: Build debug APK
