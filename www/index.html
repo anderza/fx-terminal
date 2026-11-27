@@ -51,7 +51,10 @@ tbody tr:last-child td{border-bottom:0}
 .sq .ic{font-size:15px;line-height:1}
 .sq .lb{font-size:9px;letter-spacing:.1em;color:var(--dim)}
 .sq.on .lb{color:var(--acc)}
-.keys .sq{font-size:17px}
+.keys{flex:none;gap:4px;grid-auto-rows:clamp(36px,6dvh,48px)}
+.keys .sq{font-size:16px;aspect-ratio:auto;height:100%;min-width:0}
+#app{padding-bottom:max(4px,env(safe-area-inset-bottom));}
+footer{order:0}.keys{order:1}
 footer{font-size:9px;color:var(--dim);letter-spacing:.08em;text-align:center}
 @media(max-height:640px){.inp .val{font-size:21px}.sq .ic{font-size:13px}.keys .sq{font-size:15px}}
 </style></head><body>
